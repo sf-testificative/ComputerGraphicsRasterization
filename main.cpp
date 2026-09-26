@@ -1,11 +1,91 @@
-#include "mainwindow.h"
-
 #include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QPushButton>
 
-int main(int argc, char *argv[])
-{
-    QApplication a(argc, argv);
-    MainWindow w;
+#include "task1_fill.h"
+// #include "task2_lines.h"
+// #include "task3_triangle.h"
+
+static const char* kBg     = "#ffffff";
+static const char* kBorder = "#d0d7de";
+static const char* kTxt    = "#1f2328";
+static const char* kMuted  = "#6e7781";
+
+static QPushButton* makeButton(const QString& text, const QColor& accent) {
+    auto* b = new QPushButton(text);
+    b->setCursor(Qt::PointingHandCursor);
+    b->setFixedSize(360, 56);
+    b->setStyleSheet(QString(
+                         "QPushButton {"
+                         "  background:#ffffff; color:%1;"
+                         "  border:1px solid %2; border-left:4px solid %1;"
+                         "  font-family:Consolas; font-size:15px; font-weight:bold;"
+                         "  text-align:left; padding-left:22px;"
+                         "}"
+                         "QPushButton:hover  { background:#f6f8fa; }"
+                         "QPushButton:pressed{ background:#eef1f4; }"
+                         ).arg(accent.name(), kBorder));
+    return b;
+}
+
+int main(int argc, char** argv) {
+    QApplication app(argc, argv);
+
+    QWidget w;
+    w.setWindowTitle("CG Project — Launcher");
+    w.setFixedSize(440, 420);
+    w.setStyleSheet(QString("background:%1;").arg(kBg));
+
+    auto* layout = new QVBoxLayout(&w);
+    layout->setContentsMargins(40, 30, 40, 30);
+    layout->setSpacing(14);
+
+    auto* title = new QLabel("КОМПЬЮТЕРНАЯ ГРАФИКА");
+    title->setAlignment(Qt::AlignCenter);
+    title->setStyleSheet(QString(
+                             "color:%1; font-family:Consolas; font-size:18px; font-weight:bold;"
+                             ).arg(kTxt));
+    layout->addWidget(title);
+
+    auto* sub = new QLabel("выберите задание");
+    sub->setAlignment(Qt::AlignCenter);
+    sub->setStyleSheet(QString(
+                           "color:%1; font-family:Consolas; font-size:11px;"
+                           ).arg(kMuted));
+    layout->addWidget(sub);
+    layout->addSpacing(20);
+
+    auto* b1 = makeButton("①  Заливка и границы",       QColor("#0f9d6f"));
+    auto* b2 = makeButton("②  Отрезки: Брезенхем / Ву", QColor("#2f7fd1"));
+    auto* b3 = makeButton("③  Градиентный треугольник", QColor("#d1395c"));
+    layout->addWidget(b1);
+    layout->addWidget(b2);
+    layout->addWidget(b3);
+    layout->addStretch();
+
+    auto* footer = new QLabel("© 2025  CG Lab");
+    footer->setAlignment(Qt::AlignCenter);
+    footer->setStyleSheet(QString("color:%1; font-family:Consolas; font-size:9px;").arg(kMuted));
+    layout->addWidget(footer);
+
+    QObject::connect(b1, &QPushButton::clicked, [&]{
+        auto* t = new Task1Window();
+        t->setAttribute(Qt::WA_DeleteOnClose);
+        t->show();
+    });
+    // QObject::connect(b2, &QPushButton::clicked, [&]{
+    //     auto* t = new Task2Window();
+    //     t->setAttribute(Qt::WA_DeleteOnClose);
+    //     t->show();
+    // });
+    // QObject::connect(b3, &QPushButton::clicked, [&]{
+    //     auto* t = new Task3Window();
+    //     t->setAttribute(Qt::WA_DeleteOnClose);
+    //     t->show();
+    // });
+
     w.show();
-    return QApplication::exec();
+    return app.exec();
 }
