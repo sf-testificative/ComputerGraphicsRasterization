@@ -7,16 +7,14 @@
 #include <QVector>
 #include <QColor>
 
-// ============================================================
-//  TriCanvas — 3 клика = треугольник с градиентной заливкой
-// ============================================================
 class TriCanvas : public QWidget {
     Q_OBJECT
 public:
     explicit TriCanvas(QWidget* parent = nullptr);
 
-    void clearAll();
     void setColor(int i);
+    void clearAll();
+    QColor colorOf(int i) const { return colors[i]; }
 
 signals:
     void statusChanged(const QString&);
@@ -29,15 +27,15 @@ protected:
 
 private:
     void rasterizeTriangle();
+    void syncDisplayColors();
 
     QImage img;
     QVector<QPoint> pts;
+
     QColor colors[3];
+    QColor displayColors[3];
 };
 
-// ============================================================
-//  Окно задания 3
-// ============================================================
 class Task3Window : public QWidget {
     Q_OBJECT
 public:

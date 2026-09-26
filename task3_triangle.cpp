@@ -17,9 +17,6 @@ static const char* kMuted  = "#6e7781";
 static const char* kAccent = "#0f9d6f";
 static const char* kAccent2= "#d1395c";
 
-// ============================================================
-//  TriCanvas
-// ============================================================
 TriCanvas::TriCanvas(QWidget* parent) : QWidget(parent) {
     setFixedSize(720, 600);
     setMouseTracking(true);
@@ -27,27 +24,57 @@ TriCanvas::TriCanvas(QWidget* parent) : QWidget(parent) {
     setStyleSheet("background:#ffffff; border:1px solid " + QString(kBorder) + ";");
     img = QImage(size(), QImage::Format_ARGB32);
     img.fill(Qt::white);
-    colors[0] = QColor(15, 157, 111);
-    colors[1] = QColor(209, 57, 92);
-    colors[2] = QColor(47, 127, 209);
+
+    colors[0]        = QColor(15, 157, 111);
+    colors[1]        = QColor(209, 57, 92);
+    colors[2]        = QColor(47, 127, 209);
+
+    displayColors[0] = colors[0];
+    displayColors[1] = colors[1];
+    displayColors[2] = colors[2];
 }
 
-void TriCanvas::clearAll() { img.fill(Qt::white); pts.clear(); update(); }
+void TriCanvas::clearAll() {
+    img.fill(Qt::white);
+    pts.clear();
+    syncDisplayColors();
+    update();
+}
+
+void TriCanvas::syncDisplayColors() {
+    displayColors[0] = colors[0];
+    displayColors[1] = colors[1];
+    displayColors[2] = colors[2];
+}
 
 void TriCanvas::setColor(int i) {
     QColor c = QColorDialog::getColor(colors[i], this,
-                                      QString("Цвет вершины %1").arg(i+1));
-    if (c.isValid()) colors[i] = c;
+                                      QString("Цвет вершины %1").arg(i+1),
+                                      QColorDialog::DontUseNativeDialog);
+    if (c.isValid()) {
+        colors[i] = c;
+    }
 }
 
 void TriCanvas::mousePressEvent(QMouseEvent* e) {
-    if (pts.size() >= 3) { img.fill(Qt::white); pts.clear(); }
+    if (pts.size() >= 3) {
+        img.fill(Qt::white);
+        pts.clear();
+        syncDisplayColors();
+    }
+
+    if (pts.isEmpty()) {
+        syncDisplayColors();
+    }
+
     pts.append(e->pos());
     emit statusChanged(QString("Вершин: %1 / 3").arg(pts.size()));
+
     if (pts.size() == 3) {
         rasterizeTriangle();
         emit statusChanged("Треугольник залит градиентом");
     }
+
     update();
 }
 
@@ -61,85 +88,72 @@ void TriCanvas::paintEvent(QPaintEvent*) {
     g.setPen(QPen(QColor(0,0,0,10), 1));
     for (int x = 0; x < width();  x += 40) g.drawLine(x, 0, x, height());
     for (int y = 0; y < height(); y += 40) g.drawLine(0, y, width(), y);
+
     for (int i = 0; i < pts.size(); ++i) {
-        g.setBrush(colors[i]);
+        g.setBrush(displayColors[i]);
         g.setPen(QPen(Qt::black, 1));
         g.drawEllipse(pts[i], 5, 5);
     }
 }
 
-// Растеризация: барицентрические координаты + интерполяция цвета
 void TriCanvas::rasterizeTriangle() {
     if (pts.size() != 3) return;
 
-    struct V { int x, y; QColor c; };
-    V v[3] = {
-               { pts[0].x(), pts[0].y(), colors[0] },
-               { pts[1].x(), pts[1].y(), colors[1] },
-               { pts[2].x(), pts[2].y(), colors[2] },
-               };
-    std::sort(v, v+3, [](const V& a, const V& b){ return a.y < b.y; });
+    const double Ax = pts[0].x(), Ay = pts[0].y();
+    const double Bx = pts[1].x(), By = pts[1].y();
+    const double Cx = pts[2].x(), Cy = pts[2].y();
 
-    auto bary = [&](double px, double py,
-                    const V& A, const V& B, const V& C) -> std::array<double,3>
-    {
-        double d = double((B.y - C.y)*(A.x - C.x) + (C.x - B.x)*(A.y - C.y));
-        if (qFuzzyIsNull(d)) return {1.0/3, 1.0/3, 1.0/3};
-        double wa = ((B.y - C.y)*(px - C.x) + (C.x - B.x)*(py - C.y)) / d;
-        double wb = ((C.y - A.y)*(px - C.x) + (A.x - C.x)*(py - C.y)) / d;
-        double wc = 1.0 - wa - wb;
-        return {wa, wb, wc};
-    };
+    const double det = (Bx - Cx) * (Ay - Cy) - (Ax - Cx) * (By - Cy);
+    if (std::abs(det) < 1e-9)
+        return;
 
-    int yMin = std::max(v[0].y, 0);
-    int yMax = std::min(std::max({v[0].y, v[1].y, v[2].y}), img.height()-1);
-    int xMin = std::max(std::min({v[0].x, v[1].x, v[2].x}), 0);
-    int xMax = std::min(std::max({v[0].x, v[1].x, v[2].x}), img.width()-1);
+    const int xMin = std::max(int(std::floor(std::min({Ax, Bx, Cx}))), 0);
+    const int xMax = std::min(int(std::ceil (std::max({Ax, Bx, Cx}))), img.width()  - 1);
+    const int yMin = std::max(int(std::floor(std::min({Ay, By, Cy}))), 0);
+    const int yMax = std::min(int(std::ceil (std::max({Ay, By, Cy}))), img.height() - 1);
+
+    const QColor& cA = displayColors[0];
+    const QColor& cB = displayColors[1];
+    const QColor& cC = displayColors[2];
 
     for (int y = yMin; y <= yMax; ++y) {
-        QVector<QPair<double,double>> xs;
-        auto addEdge = [&](const V& a, const V& b) {
-            if ((a.y <= y && y <= b.y) || (b.y <= y && y <= a.y)) {
-                if (a.y == b.y) return;
-                double t = double(y - a.y) / double(b.y - a.y);
-                double x = a.x + t * (b.x - a.x);
-                xs.append({x, t});
-            }
-        };
-        addEdge(v[0], v[1]);
-        addEdge(v[1], v[2]);
-        addEdge(v[0], v[2]);
+        for (int x = xMin; x <= xMax; ++x) {
 
-        if (xs.size() < 2) continue;
-        std::sort(xs.begin(), xs.end(),
-                  [](const auto& p, const auto& q){ return p.first < q.first; });
+            const double px = x + 0.5;
+            const double py = y + 0.5;
 
-        int xL = std::max(int(std::ceil(xs.first().first)), xMin);
-        int xR = std::min(int(std::floor(xs.last().first)),  xMax);
+            const double dx = px - Cx;
+            const double dy = py - Cy;
 
-        for (int x = xL; x <= xR; ++x) {
-            auto w = bary(x, y,
-                          {pts[0].x(), pts[0].y(), colors[0]},
-                          {pts[1].x(), pts[1].y(), colors[1]},
-                          {pts[2].x(), pts[2].y(), colors[2]});
-            double wa = w[0], wb = w[1], wc = w[2];
-            if (wa < -0.001 || wb < -0.001 || wc < -0.001) continue;
-            double s = wa + wb + wc;
-            if (s > 0) { wa/=s; wb/=s; wc/=s; }
+            const double a11 = Ax - Cx;
+            const double a12 = Bx - Cx;
+            const double a21 = Ay - Cy;
+            const double a22 = By - Cy;
+            const double b1  = dx;
+            const double b2  = dy;
 
-            int r = int(wa*colors[0].red()   + wb*colors[1].red()   + wc*colors[2].red());
-            int g = int(wa*colors[0].green() + wb*colors[1].green() + wc*colors[2].green());
-            int b = int(wa*colors[0].blue()  + wb*colors[1].blue()  + wc*colors[2].blue());
-            img.setPixelColor(x, y, QColor(qBound(0,r,255),
-                                           qBound(0,g,255),
-                                           qBound(0,b,255)));
+            const double D = a11 * a22 - a12 * a21;
+            if (std::abs(D) < 1e-9)
+                continue;
+
+            const double wa = (b1 * a22 - a12 * b2) / D;
+            const double wb = (a11 * b2 - b1 * a21) / D;
+            const double wc = 1.0 - wa - wb;
+
+            if (wa < -1e-6 || wb < -1e-6 || wc < -1e-6)
+                continue;
+
+            const int r = int(wa * cA.red()   + wb * cB.red()   + wc * cC.red());
+            const int g = int(wa * cA.green() + wb * cB.green() + wc * cC.green());
+            const int b = int(wa * cA.blue()  + wb * cB.blue()  + wc * cC.blue());
+
+            img.setPixelColor(x, y, QColor(qBound(0, r, 255),
+                                           qBound(0, g, 255),
+                                           qBound(0, b, 255)));
         }
     }
 }
 
-// ============================================================
-//  Task3Window
-// ============================================================
 Task3Window::Task3Window() {
     setWindowTitle("Task 3 — Gradient Triangle");
     setFixedSize(920, 660);
@@ -150,45 +164,61 @@ Task3Window::Task3Window() {
 
     auto* panel = new QWidget(this);
     panel->setGeometry(20, 20, 150, 600);
-    panel->setStyleSheet(QString("background:#ffffff; border:1px solid %1;").arg(kBorder));
+    panel->setStyleSheet(QString("background:#ffffff; border:1px solid %1; border-radius:6px;").arg(kBorder));
     auto* pl = new QVBoxLayout(panel);
     pl->setContentsMargins(8, 14, 8, 14);
-    pl->setSpacing(6);
+    pl->setSpacing(8);
 
-    auto* t1 = new QLabel("TASK ③");
-    t1->setStyleSheet(QString("color:%1; font-family:Consolas; font-size:14px; font-weight:bold; border:none;").arg(kTxt));
-    t1->setAlignment(Qt::AlignCenter);
-    auto* t2 = new QLabel("gradient triangle");
-    t2->setStyleSheet(QString("color:%1; font-family:Consolas; font-size:8px; border:none;").arg(kMuted));
-    t2->setAlignment(Qt::AlignCenter);
-    pl->addWidget(t1);
-    pl->addWidget(t2);
-    pl->addSpacing(12);
-
-    auto mk = [&](const QString& text, const QColor& accent) {
-        auto* b = new QPushButton(text);
-        b->setCursor(Qt::PointingHandCursor);
-        b->setFixedHeight(38);
-        b->setStyleSheet(QString(
-                             "QPushButton { background:#ffffff; color:%1;"
-                             "  border:1px solid %2; border-left:3px solid %1;"
-                             "  font-family:Consolas; font-size:11px; font-weight:bold;"
-                             "  text-align:left; padding-left:12px; }"
-                             "QPushButton:hover  { background:#f6f8fa; }"
-                             "QPushButton:pressed{ background:#eef1f4; }"
-                             ).arg(accent.name(), kBorder));
-        return b;
+    auto styleFor = [](const QColor& c) {
+        QColor hover = c.darker(115);
+        return QString(
+                   "QPushButton {"
+                   "  background:%1;"
+                   "  color:#ffffff;"
+                   "  border:1px solid %2;"
+                   "  border-radius:8px;"
+                   "  font-size:11px;"
+                   "  font-weight:600;"
+                   "}"
+                   "QPushButton:hover {"
+                   "  background:%2;"
+                   "}"
+                   "QPushButton:pressed {"
+                   "  background:%3;"
+                   "  padding-top:2px;"
+                   "}"
+                   ).arg(c.name(), hover.name(), c.darker(130).name());
     };
 
-    auto* b1  = mk("◆  Цвет вершины 1", QColor(kAccent));
-    auto* b2  = mk("◆  Цвет вершины 2", QColor(kAccent2));
-    auto* b3  = mk("◆  Цвет вершины 3", QColor("#2f7fd1"));
-    auto* bCl = mk("🗑  Очистить",       QColor(kMuted));
+    auto* b1 = new QPushButton("Вершина 1");
+    auto* b2 = new QPushButton("Вершина 2");
+    auto* b3 = new QPushButton("Вершина 3");
+    b1->setCursor(Qt::PointingHandCursor); b1->setFixedHeight(38);
+    b2->setCursor(Qt::PointingHandCursor); b2->setFixedHeight(38);
+    b3->setCursor(Qt::PointingHandCursor); b3->setFixedHeight(38);
+
+    b1->setStyleSheet(styleFor(canvas->colorOf(0)));
+    b2->setStyleSheet(styleFor(canvas->colorOf(1)));
+    b3->setStyleSheet(styleFor(canvas->colorOf(2)));
+
+    auto* bClr = new QPushButton("Очистить");
+    bClr->setCursor(Qt::PointingHandCursor);
+    bClr->setFixedHeight(38);
+    bClr->setStyleSheet(QString(
+                            "QPushButton {"
+                            "  background:#f6f8fa; color:%1;"
+                            "  border:1px solid %2; border-radius:8px;"
+                            "  font-family:Consolas; font-size:11px; font-weight:600;"
+                            "}"
+                            "QPushButton:hover { background:%2; color:#ffffff; }"
+                            "QPushButton:pressed { background:%2; color:#ffffff; padding-top:2px; }"
+                            ).arg(kMuted, kBorder));
+
     pl->addWidget(b1);
     pl->addWidget(b2);
     pl->addWidget(b3);
     pl->addSpacing(10);
-    pl->addWidget(bCl);
+    pl->addWidget(bClr);
     pl->addStretch();
 
     auto* status = new QLabel("Кликните 1-ю вершину треугольника");
@@ -200,10 +230,15 @@ Task3Window::Task3Window() {
     coords->setGeometry(700, 625, 200, 18);
     coords->setAlignment(Qt::AlignRight);
 
-    connect(b1,  &QPushButton::clicked, [=]{ canvas->setColor(0); });
-    connect(b2,  &QPushButton::clicked, [=]{ canvas->setColor(1); });
-    connect(b3,  &QPushButton::clicked, [=]{ canvas->setColor(2); });
-    connect(bCl, &QPushButton::clicked, [=]{ canvas->clearAll(); });
+    auto pick = [=](int i, QPushButton* b) {
+        canvas->setColor(i);
+        b->setStyleSheet(styleFor(canvas->colorOf(i)));
+    };
+
+    connect(b1,  &QPushButton::clicked, [=]{ pick(0, b1); });
+    connect(b2,  &QPushButton::clicked, [=]{ pick(1, b2); });
+    connect(b3,  &QPushButton::clicked, [=]{ pick(2, b3); });
+    connect(bClr, &QPushButton::clicked, [=]{ canvas->clearAll(); });
 
     connect(canvas, &TriCanvas::statusChanged, status, &QLabel::setText);
     connect(canvas, &TriCanvas::coordsChanged, coords, &QLabel::setText);

@@ -20,7 +20,7 @@ static QPushButton* makeButton(const QString& text, const QColor& accent) {
     b->setStyleSheet(QString(
                          "QPushButton {"
                          "  background:#ffffff; color:%1;"
-                         "  border:1px solid %2; border-left:4px solid %1;"
+                         "  border:1px solid %2;"
                          "  font-family:Consolas; font-size:15px; font-weight:bold;"
                          "  text-align:left; padding-left:22px;"
                          "}"
