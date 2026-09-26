@@ -208,7 +208,6 @@ Task3Window::Task3Window() {
                             "QPushButton {"
                             "  background:#f6f8fa; color:%1;"
                             "  border:1px solid %2; border-radius:8px;"
-                            "  font-family:Consolas; font-size:11px; font-weight:600;"
                             "}"
                             "QPushButton:hover { background:%2; color:#ffffff; }"
                             "QPushButton:pressed { background:%2; color:#ffffff; padding-top:2px; }"
@@ -222,11 +221,11 @@ Task3Window::Task3Window() {
     pl->addStretch();
 
     auto* status = new QLabel("Кликните 1-ю вершину треугольника");
-    status->setStyleSheet(QString("color:%1; font-family:Consolas; font-size:10px; background:transparent;").arg(kTxt));
+    status->setStyleSheet(QString("color:%1; background:transparent;").arg(kTxt));
     status->setGeometry(180, 625, 500, 18);
 
     auto* coords = new QLabel("x=--- y=---");
-    coords->setStyleSheet(QString("color:%1; font-family:Consolas; font-size:10px; background:transparent;").arg(kMuted));
+    coords->setStyleSheet(QString("color:%1; background:transparent;").arg(kMuted));
     coords->setGeometry(700, 625, 200, 18);
     coords->setAlignment(Qt::AlignRight);
 
