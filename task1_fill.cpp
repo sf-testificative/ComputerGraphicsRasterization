@@ -54,6 +54,9 @@ void Canvas::mousePressEvent(QMouseEvent* e) {
     if (mode == Draw) {
         drawing = true;
         last = p;
+        if (p.x() >= 0 && p.y() >= 0 && p.x() < img.width() && p.y() < img.height())
+            img.setPixelColor(p, QColor(30, 30, 30));
+        update();
     } else if (mode == FillColor) {
         floodFillScanline(p.x(), p.y(), fillColor, false);
         update();
@@ -77,8 +80,23 @@ void Canvas::mousePressEvent(QMouseEvent* e) {
 void Canvas::mouseMoveEvent(QMouseEvent* e) {
     emit coordsChanged(QString("x=%1 y=%2").arg(e->pos().x()).arg(e->pos().y()));
     if (drawing && mode == Draw) {
-        bresenham(last.x(), last.y(), e->pos().x(), e->pos().y(), QColor(30,30,30));
-        last = e->pos();
+        QPoint p = e->pos();
+        // Простая интерполяция, чтобы линия не была пунктирной при быстром движении
+        int dx = p.x() - last.x();
+        int dy = p.y() - last.y();
+        int steps = qMax(qAbs(dx), qAbs(dy));
+        if (steps == 0) {
+            if (p.x() >= 0 && p.y() >= 0 && p.x() < img.width() && p.y() < img.height())
+                img.setPixelColor(p, QColor(30, 30, 30));
+        } else {
+            for (int i = 0; i <= steps; ++i) {
+                int x = last.x() + dx * i / steps;
+                int y = last.y() + dy * i / steps;
+                if (x >= 0 && y >= 0 && x < img.width() && y < img.height())
+                    img.setPixelColor(x, y, QColor(30, 30, 30));
+            }
+        }
+        last = p;
         update();
     }
 }
@@ -91,20 +109,6 @@ void Canvas::paintEvent(QPaintEvent*) {
     g.setPen(QPen(QColor(0,0,0,10), 1));
     for (int x = 0; x < width();  x += 40) g.drawLine(x, 0, x, height());
     for (int y = 0; y < height(); y += 40) g.drawLine(0, y, width(), y);
-}
-
-void Canvas::bresenham(int x0, int y0, int x1, int y1, const QColor& c) {
-    int dx =  qAbs(x1-x0), sx = x0 < x1 ? 1 : -1;
-    int dy = -qAbs(y1-y0), sy = y0 < y1 ? 1 : -1;
-    int err = dx + dy;
-    while (true) {
-        if (x0 >= 0 && y0 >= 0 && x0 < img.width() && y0 < img.height())
-            img.setPixelColor(x0, y0, c);
-        if (x0 == x1 && y0 == y1) break;
-        int e2 = 2*err;
-        if (e2 >= dy) { err += dy; x0 += sx; }
-        if (e2 <= dx) { err += dx; y0 += sy; }
-    }
 }
 
 // 1а / 1б — заливка сериями (итеративная реализация рекурсии)
@@ -204,18 +208,22 @@ QVector<QPoint> Canvas::mooreTrace(const QPoint& start) const {
 }
 
 //  Task1Window
-static QPushButton* panelBtn(const QString& text, const QColor& accent) {
+static QPushButton* panelBtn(const QString& text) {
     auto* b = new QPushButton(text);
     b->setCursor(Qt::PointingHandCursor);
-    b->setFixedHeight(38);
-    b->setStyleSheet(QString(
-                         "QPushButton { background:#ffffff; color:%1;"
-                         "  border:1px solid %2; border-left:3px solid %1;"
-                         "  font-family:Consolas; font-size:11px; font-weight:bold;"
-                         "  text-align:left; padding-left:12px; }"
-                         "QPushButton:hover  { background:#f6f8fa; }"
-                         "QPushButton:pressed{ background:#eef1f4; }"
-                         ).arg(accent.name(), kBorder));
+    b->setFixedHeight(34);
+    b->setStyleSheet(
+        "QPushButton {"
+        "  background:#ffffff;"
+        "  color:#1f2328;"
+        "  border:1px solid #d0d7de;"
+        "  border-radius:4px;"
+        "  font-size:12px;"
+        "  padding:0 10px;"
+        "}"
+        "QPushButton:hover  { background:#f6f8fa; }"
+        "QPushButton:pressed{ background:#eef1f4; }"
+        );
     return b;
 }
 
@@ -232,7 +240,7 @@ Task1Window::Task1Window() {
     panel->setStyleSheet(QString("background:#ffffff; border:1px solid %1;").arg(kBorder));
     auto* pl = new QVBoxLayout(panel);
     pl->setContentsMargins(8, 14, 8, 14);
-    pl->setSpacing(4);
+    pl->setSpacing(6);
 
     auto* t1 = new QLabel("TASK 1");
     t1->setStyleSheet(QString("color:%1; font-family:Consolas; font-size:14px; font-weight:bold; border:none;").arg(kTxt));
@@ -244,10 +252,10 @@ Task1Window::Task1Window() {
     pl->addWidget(t2);
     pl->addSpacing(12);
 
-    auto* bDraw = panelBtn("Рисовать",      QColor(kAccent));
-    auto* bFill = panelBtn("Залить цветом", QColor("#2f7fd1"));
-    auto* bPat  = panelBtn("Залить узором", QColor("#b07a10"));
-    auto* bBnd  = panelBtn("Граница",       QColor(kAccent2));
+    auto* bDraw = panelBtn("Рисовать");
+    auto* bFill = panelBtn("Залить цветом");
+    auto* bPat  = panelBtn("Залить узором");
+    auto* bBnd  = panelBtn("Граница");
     pl->addWidget(bDraw);
     pl->addWidget(bFill);
     pl->addWidget(bPat);
@@ -260,9 +268,9 @@ Task1Window::Task1Window() {
     pl->addWidget(sep);
     pl->addSpacing(6);
 
-    auto* bColor = panelBtn("Цвет заливки",   QColor(kMuted));
-    auto* bLoad  = panelBtn("Загрузить узор", QColor(kMuted));
-    auto* bClear = panelBtn("Очистить",       QColor(kMuted));
+    auto* bColor = panelBtn("Цвет заливки");
+    auto* bLoad  = panelBtn("Загрузить узор");
+    auto* bClear = panelBtn("Очистить");
     pl->addWidget(bColor);
     pl->addWidget(bLoad);
     pl->addWidget(bClear);
