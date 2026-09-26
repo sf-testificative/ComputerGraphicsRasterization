@@ -1,0 +1,39 @@
+# Сгенерированные файлы Qt Creator (пользовательские настройки)
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.qmlproject.user
+*.qmlproject.user.*
+CMakeLists.txt.user*
+
+# Директория с настройками/бэкапами самого редактора
+.qtcreator/
+
+# Временные файлы и бэкапы Qt Creator
+*.autosave
+
+# Сгенерированные файлы сборки (moc, ui, rcc)
+moc_*.cpp
+moc_*.h
+ui_*.h
+qrc_*.cpp
+
+# Объектные файлы и библиотеки (обычно создаются в папке сборки)
+*.o
+*.obj
+*.so
+*.so.*
+*.a
+*.lib
+*.dll
+
+# Файлы qmake
+/.qmake.cache
+/.qmake.stash
+
+# Папки сборки (если используете сборку "вне источника", что рекомендуется)
+build-*/
+*-debug/
+*-release/
+build/
