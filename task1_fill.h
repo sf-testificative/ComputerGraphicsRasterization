@@ -32,7 +32,6 @@ protected:
     void paintEvent(QPaintEvent* e) override;
 
 private:
-    void bresenham(int x0, int y0, int x1, int y1, const QColor& c);
     void floodFillScanline(int x, int y, const QColor& c, bool usePattern);
     QPoint findStart(const QPoint& p) const;
     bool isFg(int x, int y) const;
