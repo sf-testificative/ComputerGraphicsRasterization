@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     QApplication app(argc, argv);
 
     QWidget w;
-    w.setWindowTitle("CG Project — Launcher");
+    w.setWindowTitle("Lab3");
     w.setFixedSize(440, 420);
     w.setStyleSheet(QString("background:%1;").arg(kBg));
 

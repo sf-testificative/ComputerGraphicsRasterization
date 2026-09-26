@@ -13,7 +13,6 @@ public:
     explicit LineCanvas(QWidget* parent = nullptr);
 
     void setAlgo(Algo a);
-    void setColor(const QColor& c);
     void clearAll();
 
 signals:
@@ -26,12 +25,11 @@ protected:
     void paintEvent(QPaintEvent* e) override;
 
 private:
-    void drawBresenham(int x0, int y0, int x1, int y1, const QColor& c);
-    void drawWu(int x0, int y0, int x1, int y1, const QColor& c);
+    void drawBresenham(int x0, int y0, int x1, int y1);
+    void drawWu(int x0, int y0, int x1, int y1);
 
     QImage img;
     Algo   algo = Bresenham;
-    QColor color = Qt::black;
     QPoint p0;
     bool   pending = false;
 };
