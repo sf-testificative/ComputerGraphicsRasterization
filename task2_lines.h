@@ -28,7 +28,9 @@ private:
     void drawBresenham(int x0, int y0, int x1, int y1);
     void drawWu(int x0, int y0, int x1, int y1);
 
-    QImage img;
+    static constexpr int kScale = 2;    // коэффициент увеличения
+
+    QImage img;                 // буфер в "логических" пикселях
     Algo   algo = Bresenham;
     QPoint p0;
     bool   pending = false;

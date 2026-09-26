@@ -16,23 +16,35 @@ static const char* kMuted  = "#6e7781";
 static const char* kAccent = "#0f9d6f";
 
 LineCanvas::LineCanvas(QWidget* parent) : QWidget(parent) {
-    setFixedSize(760, 600);
+    const int logicalW = 380;
+    const int logicalH = 300;
+
+    setFixedSize(logicalW * kScale, logicalH * kScale);
     setMouseTracking(true);
     setCursor(Qt::CrossCursor);
     setStyleSheet("background:#ffffff; border:1px solid " + QString(kBorder) + ";");
-    img = QImage(size(), QImage::Format_ARGB32);
+
+    img = QImage(logicalW, logicalH, QImage::Format_ARGB32);
     img.fill(Qt::white);
 }
 
 void LineCanvas::setAlgo(Algo a) { algo = a; }
-void LineCanvas::clearAll() { img.fill(Qt::white); pending = false; update(); }
+
+void LineCanvas::clearAll() {
+    img.fill(Qt::white);
+    pending = false;
+    update();
+}
 
 void LineCanvas::mousePressEvent(QMouseEvent* e) {
+    QPoint lp = e->pos() / kScale;
+
     if (!pending) {
-        p0 = e->pos(); pending = true;
-        emit statusChanged(QString("Точка 1: (%1,%2). Кликните 2-ю точку.").arg(p0.x()).arg(p0.y()));
+        p0 = lp; pending = true;
+        emit statusChanged(QString("Точка 1: (%1,%2). Кликните 2-ю точку.")
+                               .arg(p0.x()).arg(p0.y()));
     } else {
-        QPoint p1 = e->pos();
+        QPoint p1 = lp;
         if (algo == Bresenham)
             drawBresenham(p0.x(), p0.y(), p1.x(), p1.y());
         else
@@ -45,18 +57,24 @@ void LineCanvas::mousePressEvent(QMouseEvent* e) {
 }
 
 void LineCanvas::mouseMoveEvent(QMouseEvent* e) {
-    emit coordsChanged(QString("x=%1 y=%2").arg(e->pos().x()).arg(e->pos().y()));
+    QPoint lp = e->pos() / kScale;
+    emit coordsChanged(QString("x=%1 y=%2").arg(lp.x()).arg(lp.y()));
 }
 
 void LineCanvas::paintEvent(QPaintEvent*) {
     QPainter g(this);
-    g.drawImage(0, 0, img);
+    g.setRenderHint(QPainter::SmoothPixmapTransform, false);
+    g.drawImage(rect(), img);
+
     g.setPen(QPen(QColor(0,0,0,10), 1));
-    for (int x = 0; x < width();  x += 40) g.drawLine(x, 0, x, height());
-    for (int y = 0; y < height(); y += 40) g.drawLine(0, y, width(), y);
+    for (int x = 0; x <= img.width();  x += 20)
+        g.drawLine(x * kScale, 0, x * kScale, height());
+    for (int y = 0; y <= img.height(); y += 20)
+        g.drawLine(0, y * kScale, width(), y * kScale);
+
     if (pending) {
         g.setPen(QPen(QColor("#d1395c"), 1, Qt::DashLine));
-        g.drawEllipse(p0, 4, 4);
+        g.drawEllipse(p0 * kScale, 4, 4);
     }
 }
 
