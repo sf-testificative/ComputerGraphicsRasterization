@@ -15,9 +15,6 @@ static const char* kTxt    = "#1f2328";
 static const char* kMuted  = "#6e7781";
 static const char* kAccent = "#0f9d6f";
 
-// ============================================================
-//  LineCanvas
-// ============================================================
 LineCanvas::LineCanvas(QWidget* parent) : QWidget(parent) {
     setFixedSize(760, 600);
     setMouseTracking(true);
@@ -63,9 +60,6 @@ void LineCanvas::paintEvent(QPaintEvent*) {
     }
 }
 
-// ------------------------------------------------------------
-//  Обобщённый целочисленный алгоритм Брезенхема (все 8 октантов)
-// ------------------------------------------------------------
 void LineCanvas::drawBresenham(int x0, int y0, int x1, int y1) {
     const int W = img.width();
     const int H = img.height();
@@ -89,9 +83,6 @@ void LineCanvas::drawBresenham(int x0, int y0, int x1, int y1) {
     }
 }
 
-// ------------------------------------------------------------
-//  Алгоритм Ву (сглаживание)
-// ------------------------------------------------------------
 void LineCanvas::drawWu(int x0, int y0, int x1, int y1) {
     const int W = img.width();
     const int H = img.height();
@@ -148,9 +139,6 @@ void LineCanvas::drawWu(int x0, int y0, int x1, int y1) {
     else       plot(x1, y1, 1.0);
 }
 
-// ============================================================
-//  Task2Window
-// ============================================================
 Task2Window::Task2Window() {
     setWindowTitle("Task 2 — Bresenham & Wu");
     setFixedSize(920, 660);
@@ -166,7 +154,6 @@ Task2Window::Task2Window() {
     pl->setContentsMargins(8, 12, 8, 12);
     pl->setSpacing(8);
 
-    // Обычная кнопка (для действий — цвет, очистка)
     auto mkAction = [&](const QString& text, const QColor& accent) {
         auto* b = new QPushButton(text);
         b->setCursor(Qt::PointingHandCursor);
@@ -177,9 +164,6 @@ Task2Window::Task2Window() {
                              "  color:%1;"
                              "  border:1px solid %2;"
                              "  border-radius:8px;"
-                             "  font-family:Consolas;"
-                             "  font-size:11px;"
-                             "  font-weight:600;"
                              "}"
                              "QPushButton:hover {"
                              "  background:%1;"
@@ -195,8 +179,6 @@ Task2Window::Task2Window() {
         return b;
     };
 
-    // Переключаемая кнопка (для выбора метода)
-    // Активное состояние — залита цветом акцента, белый текст.
     auto mkToggle = [&](const QString& text, const QColor& accent) {
         auto* b = new QPushButton(text);
         b->setCursor(Qt::PointingHandCursor);
@@ -209,9 +191,6 @@ Task2Window::Task2Window() {
                              "  color:%1;"
                              "  border:1px solid %2;"
                              "  border-radius:8px;"
-                             "  font-family:Consolas;"
-                             "  font-size:11px;"
-                             "  font-weight:600;"
                              "}"
                              "QPushButton:hover {"
                              "  background:%1;"
@@ -235,7 +214,7 @@ Task2Window::Task2Window() {
     auto* bWu  = mkToggle("Ву",        QColor("#2f7fd1"));
     auto* bClr = mkAction("Очистить",  QColor(kMuted));
 
-    bBr->setChecked(true);   // Брезенхем активен по умолчанию
+    bBr->setChecked(true);
 
     pl->addWidget(bBr);
     pl->addWidget(bWu);
@@ -244,11 +223,11 @@ Task2Window::Task2Window() {
     pl->addStretch();
 
     auto* status = new QLabel("Кликните 1-ю точку отрезка");
-    status->setStyleSheet(QString("color:%1; font-family:Consolas; font-size:10px; background:transparent;").arg(kTxt));
+    status->setStyleSheet(QString("color:%1; background:transparent;").arg(kTxt));
     status->setGeometry(140, 625, 500, 18);
 
     auto* coords = new QLabel("x=--- y=---");
-    coords->setStyleSheet(QString("color:%1; font-family:Consolas; font-size:10px; background:transparent;").arg(kMuted));
+    coords->setStyleSheet(QString("color:%1; background:transparent;").arg(kMuted));
     coords->setGeometry(740, 625, 160, 18);
     coords->setAlignment(Qt::AlignRight);
 
