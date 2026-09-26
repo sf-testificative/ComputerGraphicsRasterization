@@ -5,8 +5,8 @@
 #include <QPushButton>
 
 #include "task1_fill.h"
-// #include "task2_lines.h"
-// #include "task3_triangle.h"
+#include "task2_lines.h"
+#include "task3_triangle.h"
 
 static const char* kBg     = "#ffffff";
 static const char* kBorder = "#d0d7de";
@@ -42,49 +42,29 @@ int main(int argc, char** argv) {
     layout->setContentsMargins(40, 30, 40, 30);
     layout->setSpacing(14);
 
-    auto* title = new QLabel("КОМПЬЮТЕРНАЯ ГРАФИКА");
-    title->setAlignment(Qt::AlignCenter);
-    title->setStyleSheet(QString(
-                             "color:%1; font-family:Consolas; font-size:18px; font-weight:bold;"
-                             ).arg(kTxt));
-    layout->addWidget(title);
-
-    auto* sub = new QLabel("выберите задание");
-    sub->setAlignment(Qt::AlignCenter);
-    sub->setStyleSheet(QString(
-                           "color:%1; font-family:Consolas; font-size:11px;"
-                           ).arg(kMuted));
-    layout->addWidget(sub);
-    layout->addSpacing(20);
-
-    auto* b1 = makeButton("①  Заливка и границы",       QColor("#0f9d6f"));
-    auto* b2 = makeButton("②  Отрезки: Брезенхем / Ву", QColor("#2f7fd1"));
-    auto* b3 = makeButton("③  Градиентный треугольник", QColor("#d1395c"));
+    auto* b1 = makeButton("Заливка и границы",       QColor("#0f9d6f"));
+    auto* b2 = makeButton("Отрезки: Брезенхем / Ву", QColor("#0f9d6f"));
+    auto* b3 = makeButton("Градиентный треугольник", QColor("#0f9d6f"));
     layout->addWidget(b1);
     layout->addWidget(b2);
     layout->addWidget(b3);
     layout->addStretch();
-
-    auto* footer = new QLabel("© 2025  CG Lab");
-    footer->setAlignment(Qt::AlignCenter);
-    footer->setStyleSheet(QString("color:%1; font-family:Consolas; font-size:9px;").arg(kMuted));
-    layout->addWidget(footer);
 
     QObject::connect(b1, &QPushButton::clicked, [&]{
         auto* t = new Task1Window();
         t->setAttribute(Qt::WA_DeleteOnClose);
         t->show();
     });
-    // QObject::connect(b2, &QPushButton::clicked, [&]{
-    //     auto* t = new Task2Window();
-    //     t->setAttribute(Qt::WA_DeleteOnClose);
-    //     t->show();
-    // });
-    // QObject::connect(b3, &QPushButton::clicked, [&]{
-    //     auto* t = new Task3Window();
-    //     t->setAttribute(Qt::WA_DeleteOnClose);
-    //     t->show();
-    // });
+    QObject::connect(b2, &QPushButton::clicked, [&]{
+        auto* t = new Task2Window();
+        t->setAttribute(Qt::WA_DeleteOnClose);
+        t->show();
+    });
+    QObject::connect(b3, &QPushButton::clicked, [&]{
+        auto* t = new Task3Window();
+        t->setAttribute(Qt::WA_DeleteOnClose);
+        t->show();
+    });
 
     w.show();
     return app.exec();
