@@ -30,6 +30,7 @@ static QPushButton* makeButton(const QString& text, const QColor& accent) {
 
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
+    qDebug() << "1";
 
     QWidget w;
     w.setWindowTitle("Lab3");
