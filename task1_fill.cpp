@@ -106,8 +106,8 @@ void Canvas::paintEvent(QPaintEvent*) {
     QPainter g(this);
     g.drawImage(0, 0, img);
     g.setPen(QPen(QColor(0,0,0,10), 1));
-    for (int x = 0; x < width();  x += 40) g.drawLine(x, 0, x, height());
-    for (int y = 0; y < height(); y += 40) g.drawLine(0, y, width(), y);
+    // for (int x = 0; x < width();  x += 40) g.drawLine(x, 0, x, height());
+    // for (int y = 0; y < height(); y += 40) g.drawLine(0, y, width(), y);
 }
 
 void Canvas::floodFillScanline(int x, int y, const QColor& c, bool usePattern) {
