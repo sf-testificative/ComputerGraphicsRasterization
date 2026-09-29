@@ -237,7 +237,7 @@ Task3Window::Task3Window() {
     connect(b1,  &QPushButton::clicked, [=]{ pick(0, b1); });
     connect(b2,  &QPushButton::clicked, [=]{ pick(1, b2); });
     connect(b3,  &QPushButton::clicked, [=]{ pick(2, b3); });
-    connect(bClr, &QPushButton::clicked, [=]{ canvas->clearAll(); });
+    connect(bClr, &QPushButton::clicked, this, [=]{ canvas->clearAll(); });
 
     connect(canvas, &TriCanvas::statusChanged, status, &QLabel::setText);
     connect(canvas, &TriCanvas::coordsChanged, coords, &QLabel::setText);

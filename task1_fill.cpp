@@ -271,21 +271,21 @@ Task1Window::Task1Window() {
     coords->setGeometry(700, 625, 200, 18);
     coords->setAlignment(Qt::AlignRight);
 
-    connect(bDraw, &QPushButton::clicked, [=]{ canvas->setMode(Canvas::Draw);
+    connect(bDraw, &QPushButton::clicked, this, [=]{ canvas->setMode(Canvas::Draw);
         status->setText("Режим: рисование"); });
-    connect(bFill, &QPushButton::clicked, [=]{ canvas->setMode(Canvas::FillColor);
+    connect(bFill, &QPushButton::clicked, this, [=]{ canvas->setMode(Canvas::FillColor);
         status->setText("Режим: заливка цветом"); });
-    connect(bPat,  &QPushButton::clicked, [=]{ canvas->setMode(Canvas::FillPattern);
+    connect(bPat,  &QPushButton::clicked, this, [=]{ canvas->setMode(Canvas::FillPattern);
         status->setText("Режим: заливка узором"); });
-    connect(bBnd,  &QPushButton::clicked, [=]{ canvas->setMode(Canvas::Boundary);
+    connect(bBnd,  &QPushButton::clicked, this, [=]{ canvas->setMode(Canvas::Boundary);
         status->setText("Режим: обход границы"); });
 
-    connect(bColor, &QPushButton::clicked, [=]{
+    connect(bColor, &QPushButton::clicked, this, [=]{
         QColor c = QColorDialog::getColor(QColor(kAccent), this, "Цвет заливки");
         if (c.isValid()) canvas->setFillColor(c);
     });
-    connect(bLoad,  &QPushButton::clicked, [=]{ canvas->loadPattern(); });
-    connect(bClear, &QPushButton::clicked, [=]{ canvas->clearAll(); });
+    connect(bLoad,  &QPushButton::clicked, this, [=]{ canvas->loadPattern(); });
+    connect(bClear, &QPushButton::clicked, this, [=]{ canvas->clearAll(); });
 
     connect(canvas, &Canvas::statusChanged, status, &QLabel::setText);
     connect(canvas, &Canvas::coordsChanged, coords, &QLabel::setText);
