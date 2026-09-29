@@ -6,9 +6,7 @@
 #include <QPoint>
 #include <QVector>
 
-// ============================================================
-//  Canvas — виджет для рисования и всех операций задания 1
-// ============================================================
+
 class Canvas : public QWidget {
     Q_OBJECT
 public:
@@ -33,9 +31,9 @@ protected:
 
 private:
     void floodFillScanline(int x, int y, const QColor& c, bool usePattern);
-    QPoint findStart(const QPoint& p) const;
-    bool isFg(int x, int y) const;
-    QVector<QPoint> mooreTrace(const QPoint& start) const;
+    QPoint findStart(const QPoint&) const;
+    bool isFg(int , int) const;
+    QVector<QPoint> mooreTrace(const QPoint&) const;
 
     QImage img;
     QImage pattern;
@@ -46,9 +44,7 @@ private:
     QVector<QPoint> boundaryPts;
 };
 
-// ============================================================
-//  Окно задания 1
-// ============================================================
+
 class Task1Window : public QWidget {
     Q_OBJECT
 public:

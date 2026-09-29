@@ -81,7 +81,6 @@ void Canvas::mouseMoveEvent(QMouseEvent* e) {
     emit coordsChanged(QString("x=%1 y=%2").arg(e->pos().x()).arg(e->pos().y()));
     if (drawing && mode == Draw) {
         QPoint p = e->pos();
-        // Простая интерполяция, чтобы линия не была пунктирной при быстром движении
         int dx = p.x() - last.x();
         int dy = p.y() - last.y();
         int steps = qMax(qAbs(dx), qAbs(dy));
@@ -111,7 +110,6 @@ void Canvas::paintEvent(QPaintEvent*) {
     for (int y = 0; y < height(); y += 40) g.drawLine(0, y, width(), y);
 }
 
-// 1а / 1б — заливка сериями (итеративная реализация рекурсии)
 void Canvas::floodFillScanline(int x, int y, const QColor& c, bool usePattern) {
     if (x < 0 || y < 0 || x >= img.width() || y >= img.height()) return;
 
@@ -153,7 +151,6 @@ void Canvas::floodFillScanline(int x, int y, const QColor& c, bool usePattern) {
     }
 }
 
-// 1в — обход границы по Муру
 QPoint Canvas::findStart(const QPoint& p) const {
     for (int r = 0; r < 40; ++r) {
         for (int dy = -r; dy <= r; ++dy)
@@ -172,13 +169,14 @@ bool Canvas::isFg(int x, int y) const {
 }
 
 QVector<QPoint> Canvas::mooreTrace(const QPoint& start) const {
-    const int dx[8] = { 1, 1, 0,-1,-1,-1, 0, 1 };
-    const int dy[8] = { 0, 1, 1, 1, 0,-1,-1,-1 };
+    static const std::pair<int,int> dir[8] = {
+    { 1,  0},{ 1,  1},{ 0,  1},{-1,  1},{-1,  0},{-1, -1},{ 0, -1},{ 1, -1}
+    };
 
     QVector<QPoint> contour;
     QPoint cur = start;
     contour.append(cur);
-    int prevDir = 4;
+    int prevDir = 4;   // пришли с запада
     const int maxSteps = img.width() * img.height();
     int steps = 0;
     QPoint first = start;
@@ -188,8 +186,8 @@ QVector<QPoint> Canvas::mooreTrace(const QPoint& start) const {
         bool found = false;
         for (int k = 1; k <= 8; ++k) {
             int di = (prevDir + k) % 8;
-            int nx = cur.x() + dx[di];
-            int ny = cur.y() + dy[di];
+            int nx = cur.x() + dir[di].first;
+            int ny = cur.y() + dir[di].second;
             if (isFg(nx, ny)) {
                 cur = QPoint(nx, ny);
                 contour.append(cur);
@@ -207,7 +205,6 @@ QVector<QPoint> Canvas::mooreTrace(const QPoint& start) const {
     return contour;
 }
 
-//  Task1Window
 static QPushButton* panelBtn(const QString& text) {
     auto* b = new QPushButton(text);
     b->setCursor(Qt::PointingHandCursor);
@@ -242,16 +239,6 @@ Task1Window::Task1Window() {
     pl->setContentsMargins(8, 14, 8, 14);
     pl->setSpacing(6);
 
-    auto* t1 = new QLabel("TASK 1");
-    t1->setStyleSheet(QString("color:%1; font-family:Consolas; font-size:14px; font-weight:bold; border:none;").arg(kTxt));
-    t1->setAlignment(Qt::AlignCenter);
-    auto* t2 = new QLabel("fill / boundary");
-    t2->setStyleSheet(QString("color:%1; font-family:Consolas; font-size:8px; border:none;").arg(kMuted));
-    t2->setAlignment(Qt::AlignCenter);
-    pl->addWidget(t1);
-    pl->addWidget(t2);
-    pl->addSpacing(12);
-
     auto* bDraw = panelBtn("Рисовать");
     auto* bFill = panelBtn("Залить цветом");
     auto* bPat  = panelBtn("Залить узором");
@@ -284,21 +271,21 @@ Task1Window::Task1Window() {
     coords->setGeometry(700, 625, 200, 18);
     coords->setAlignment(Qt::AlignRight);
 
-    connect(bDraw, &QPushButton::clicked, [=]{ canvas->setMode(Canvas::Draw);
+    connect(bDraw, &QPushButton::clicked, this, [=]{ canvas->setMode(Canvas::Draw);
         status->setText("Режим: рисование"); });
-    connect(bFill, &QPushButton::clicked, [=]{ canvas->setMode(Canvas::FillColor);
+    connect(bFill, &QPushButton::clicked, this, [=]{ canvas->setMode(Canvas::FillColor);
         status->setText("Режим: заливка цветом"); });
-    connect(bPat,  &QPushButton::clicked, [=]{ canvas->setMode(Canvas::FillPattern);
+    connect(bPat,  &QPushButton::clicked, this, [=]{ canvas->setMode(Canvas::FillPattern);
         status->setText("Режим: заливка узором"); });
-    connect(bBnd,  &QPushButton::clicked, [=]{ canvas->setMode(Canvas::Boundary);
+    connect(bBnd,  &QPushButton::clicked, this, [=]{ canvas->setMode(Canvas::Boundary);
         status->setText("Режим: обход границы"); });
 
-    connect(bColor, &QPushButton::clicked, [=]{
+    connect(bColor, &QPushButton::clicked, this, [=]{
         QColor c = QColorDialog::getColor(QColor(kAccent), this, "Цвет заливки");
         if (c.isValid()) canvas->setFillColor(c);
     });
-    connect(bLoad,  &QPushButton::clicked, [=]{ canvas->loadPattern(); });
-    connect(bClear, &QPushButton::clicked, [=]{ canvas->clearAll(); });
+    connect(bLoad,  &QPushButton::clicked, this, [=]{ canvas->loadPattern(); });
+    connect(bClear, &QPushButton::clicked, this, [=]{ canvas->clearAll(); });
 
     connect(canvas, &Canvas::statusChanged, status, &QLabel::setText);
     connect(canvas, &Canvas::coordsChanged, coords, &QLabel::setText);

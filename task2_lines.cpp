@@ -249,16 +249,16 @@ Task2Window::Task2Window() {
     coords->setGeometry(740, 625, 160, 18);
     coords->setAlignment(Qt::AlignRight);
 
-    connect(bBr,  &QPushButton::clicked, [=]{
+    connect(bBr,  &QPushButton::clicked, this, [=]{
         canvas->setAlgo(LineCanvas::Bresenham);
         status->setText("Алгоритм: Брезенхем");
     });
-    connect(bWu,  &QPushButton::clicked, [=]{
+    connect(bWu,  &QPushButton::clicked, this, [=]{
         canvas->setAlgo(LineCanvas::Wu);
         status->setText("Алгоритм: Ву");
     });
 
-    connect(bClr, &QPushButton::clicked, [=]{ canvas->clearAll(); });
+    connect(bClr, &QPushButton::clicked, this, [=]{ canvas->clearAll(); });
 
     connect(canvas, &LineCanvas::statusChanged, status, &QLabel::setText);
     connect(canvas, &LineCanvas::coordsChanged, coords, &QLabel::setText);

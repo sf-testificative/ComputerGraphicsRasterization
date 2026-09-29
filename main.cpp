@@ -20,8 +20,6 @@ static QPushButton* makeButton(const QString& text, const QColor& accent) {
     b->setStyleSheet(QString(
                          "QPushButton {"
                          "  background:#ffffff; color:%1;"
-                         "  border:1px solid %2;"
-                         "  font-family:Consolas; font-size:15px; font-weight:bold;"
                          "  text-align:left; padding-left:22px;"
                          "}"
                          "QPushButton:hover  { background:#f6f8fa; }"
@@ -50,17 +48,17 @@ int main(int argc, char** argv) {
     layout->addWidget(b3);
     layout->addStretch();
 
-    QObject::connect(b1, &QPushButton::clicked, [&]{
+    QObject::connect(b1, &QPushButton::clicked, qApp ,[]{
         auto* t = new Task1Window();
         t->setAttribute(Qt::WA_DeleteOnClose);
         t->show();
     });
-    QObject::connect(b2, &QPushButton::clicked, [&]{
+    QObject::connect(b2, &QPushButton::clicked, qApp, []{
         auto* t = new Task2Window();
         t->setAttribute(Qt::WA_DeleteOnClose);
         t->show();
     });
-    QObject::connect(b3, &QPushButton::clicked, [&]{
+    QObject::connect(b3, &QPushButton::clicked, qApp, []{
         auto* t = new Task3Window();
         t->setAttribute(Qt::WA_DeleteOnClose);
         t->show();
