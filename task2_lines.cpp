@@ -9,13 +9,11 @@
 #include <cmath>
 #include <algorithm>
 
-static const char* kBg     = "#ffffff";
+static const char* kBg = "#ffffff";
 static const char* kBorder = "#d0d7de";
-static const char* kTxt    = "#1f2328";
-static const char* kMuted  = "#6e7781";
-static const char* kAccent = "#0f9d6f";
 
-LineCanvas::LineCanvas(QWidget* parent) : QWidget(parent) {
+LineCanvas::LineCanvas(QWidget* parent) : QWidget(parent)
+{
     setFixedSize(760, 600);
     setMouseTracking(true);
     setCursor(Qt::CrossCursor);
@@ -27,10 +25,11 @@ LineCanvas::LineCanvas(QWidget* parent) : QWidget(parent) {
 void LineCanvas::setAlgo(Algo a) { algo = a; }
 void LineCanvas::clearAll() { img.fill(Qt::white); pending = false; update(); }
 
-void LineCanvas::mousePressEvent(QMouseEvent* e) {
+void LineCanvas::mousePressEvent(QMouseEvent* e)
+{
     if (!pending) {
         p0 = e->pos(); pending = true;
-        emit statusChanged(QString("Точка 1: (%1,%2). Кликните 2-ю точку.").arg(p0.x()).arg(p0.y()));
+        emit statusChanged(QString("Dot 1: (%1,%2). Click the 2nd.").arg(p0.x()).arg(p0.y()));
     } else {
         QPoint p1 = e->pos();
         if (algo == Bresenham)
@@ -38,29 +37,31 @@ void LineCanvas::mousePressEvent(QMouseEvent* e) {
         else
             drawWu(p0.x(), p0.y(), p1.x(), p1.y());
         pending = false;
-        emit statusChanged(QString("Отрезок: (%1,%2) → (%3,%4)")
-                               .arg(p0.x()).arg(p0.y()).arg(p1.x()).arg(p1.y()));
+        emit statusChanged(QString("Line: (%1,%2) → (%3,%4)").arg(p0.x()).arg(p0.y()).arg(p1.x()).arg(p1.y()));
         update();
     }
 }
 
-void LineCanvas::mouseMoveEvent(QMouseEvent* e) {
+void LineCanvas::mouseMoveEvent(QMouseEvent* e)
+{
     emit coordsChanged(QString("x=%1 y=%2").arg(e->pos().x()).arg(e->pos().y()));
 }
 
-void LineCanvas::paintEvent(QPaintEvent*) {
+void LineCanvas::paintEvent(QPaintEvent*)
+{
     QPainter g(this);
     g.drawImage(0, 0, img);
     g.setPen(QPen(QColor(0,0,0,10), 1));
     for (int x = 0; x < width();  x += 40) g.drawLine(x, 0, x, height());
     for (int y = 0; y < height(); y += 40) g.drawLine(0, y, width(), y);
     if (pending) {
-        g.setPen(QPen(QColor("#d1395c"), 1, Qt::DashLine));
+        g.setPen(QPen(Qt::black, 1, Qt::DashLine));
         g.drawEllipse(p0, 4, 4);
     }
 }
 
-void LineCanvas::drawBresenham(int x0, int y0, int x1, int y1) {
+void LineCanvas::drawBresenham(int x0, int y0, int x1, int y1)
+{
     const int W = img.width();
     const int H = img.height();
     const QColor c = Qt::black;
@@ -71,7 +72,8 @@ void LineCanvas::drawBresenham(int x0, int y0, int x1, int y1) {
     int sy = (y0 < y1) ? 1 : -1;
     int err = dx + dy;
 
-    while (true) {
+    while (true)
+    {
         if (x0 >= 0 && y0 >= 0 && x0 < W && y0 < H)
             img.setPixelColor(x0, y0, c);
 
@@ -83,7 +85,8 @@ void LineCanvas::drawBresenham(int x0, int y0, int x1, int y1) {
     }
 }
 
-void LineCanvas::drawWu(int x0, int y0, int x1, int y1) {
+void LineCanvas::drawWu(int x0, int y0, int x1, int y1)
+{
     const int W = img.width();
     const int H = img.height();
     const QColor c = Qt::black;
@@ -93,14 +96,14 @@ void LineCanvas::drawWu(int x0, int y0, int x1, int y1) {
         if (k <= 0.0) return;
         if (k > 1.0) k = 1.0;
         QColor old = img.pixelColor(x, y);
-        double r = c.red()   * k + old.red()   * (1.0 - k);
+        double r = c.red() * k + old.red() * (1.0 - k);
         double g = c.green() * k + old.green() * (1.0 - k);
-        double b = c.blue()  * k + old.blue()  * (1.0 - k);
+        double b = c.blue() * k + old.blue() * (1.0 - k);
         img.setPixelColor(x, y, QColor(int(r), int(g), int(b)));
     };
 
     const int xStart = x0, yStart = y0;
-    const int xEnd   = x1, yEnd   = y1;
+    const int xEnd = x1, yEnd = y1;
 
     bool steep = qAbs(y1 - y0) > qAbs(x1 - x0);
     if (steep) { std::swap(x0, y0); std::swap(x1, y1); }
@@ -111,36 +114,40 @@ void LineCanvas::drawWu(int x0, int y0, int x1, int y1) {
 
     if (dx == 0) {
         plot(xStart, yStart, 1.0);
-        plot(xEnd,   yEnd,   1.0);
+        plot(xEnd, yEnd, 1.0);
         return;
     }
 
     double gradient = double(dy) / double(dx);
 
-    if (steep) plot(y0, x0, 1.0);
-    else       plot(x0, y0, 1.0);
+    if (steep)
+        plot(y0, x0, 1.0);
+    else
+        plot(x0, y0, 1.0);
 
     double y = y0 + gradient;
-    for (int x = x0 + 1; x < x1; ++x) {
-        int    yi   = int(std::floor(y));
+    for (int x = x0 + 1; x < x1; ++x)
+    {
+        int yi = int(std::floor(y));
         double frac = y - yi;
 
         if (steep) {
-            plot(yi,     x, 1.0 - frac);
+            plot(yi, x, 1.0 - frac);
             plot(yi + 1, x, frac);
         } else {
-            plot(x, yi,     1.0 - frac);
+            plot(x, yi, 1.0 - frac);
             plot(x, yi + 1, frac);
         }
         y += gradient;
     }
 
     if (steep) plot(y1, x1, 1.0);
-    else       plot(x1, y1, 1.0);
+    else plot(x1, y1, 1.0);
 }
 
-Task2Window::Task2Window() {
-    setWindowTitle("Task 2 — Bresenham & Wu");
+Task2Window::Task2Window()
+{
+    setWindowTitle("Task 2 - Bresenham & Wu");
     setFixedSize(920, 660);
     setStyleSheet(QString("background:%1;").arg(kBg));
 
@@ -160,10 +167,8 @@ Task2Window::Task2Window() {
         b->setFixedHeight(38);
         b->setStyleSheet(QString(
                              "QPushButton {"
-                             "  background:#f6f8fa;"
                              "  color:%1;"
                              "  border:1px solid %2;"
-                             "  border-radius:8px;"
                              "}"
                              "QPushButton:hover {"
                              "  background:%1;"
@@ -187,10 +192,8 @@ Task2Window::Task2Window() {
         b->setAutoExclusive(true);
         b->setStyleSheet(QString(
                              "QPushButton {"
-                             "  background:#f6f8fa;"
                              "  color:%1;"
                              "  border:1px solid %2;"
-                             "  border-radius:8px;"
                              "}"
                              "QPushButton:hover {"
                              "  background:%1;"
@@ -210,9 +213,9 @@ Task2Window::Task2Window() {
         return b;
     };
 
-    auto* bBr  = mkToggle("Брезенхем", QColor(kAccent));
-    auto* bWu  = mkToggle("Ву",        QColor("#2f7fd1"));
-    auto* bClr = mkAction("Очистить",  QColor(kMuted));
+    auto* bBr = mkToggle("Брезенхем", Qt::darkGreen);
+    auto* bWu = mkToggle("Ву", Qt::blue);
+    auto* bClr = mkAction("Очистить",  Qt::red);
 
     bBr->setChecked(true);
 
@@ -222,26 +225,12 @@ Task2Window::Task2Window() {
     pl->addWidget(bClr);
     pl->addStretch();
 
-    auto* status = new QLabel("Кликните 1-ю точку отрезка");
-    status->setStyleSheet(QString("color:%1; background:transparent;").arg(kTxt));
-    status->setGeometry(140, 625, 500, 18);
-
-    auto* coords = new QLabel("x=--- y=---");
-    coords->setStyleSheet(QString("color:%1; background:transparent;").arg(kMuted));
-    coords->setGeometry(740, 625, 160, 18);
-    coords->setAlignment(Qt::AlignRight);
-
     connect(bBr,  &QPushButton::clicked, this, [=]{
         canvas->setAlgo(LineCanvas::Bresenham);
-        status->setText("Алгоритм: Брезенхем");
     });
     connect(bWu,  &QPushButton::clicked, this, [=]{
         canvas->setAlgo(LineCanvas::Wu);
-        status->setText("Алгоритм: Ву");
     });
 
     connect(bClr, &QPushButton::clicked, this, [=]{ canvas->clearAll(); });
-
-    connect(canvas, &LineCanvas::statusChanged, status, &QLabel::setText);
-    connect(canvas, &LineCanvas::coordsChanged, coords, &QLabel::setText);
 }
