@@ -9,11 +9,8 @@
 #include <cmath>
 #include <algorithm>
 
-static const char* kBg     = "#ffffff";
+static const char* kBg = "#ffffff";
 static const char* kBorder = "#d0d7de";
-static const char* kTxt    = "#1f2328";
-static const char* kMuted  = "#6e7781";
-static const char* kAccent = "#0f9d6f";
 
 LineCanvas::LineCanvas(QWidget* parent) : QWidget(parent)
 {
@@ -32,7 +29,7 @@ void LineCanvas::mousePressEvent(QMouseEvent* e)
 {
     if (!pending) {
         p0 = e->pos(); pending = true;
-        emit statusChanged(QString("Точка 1: (%1,%2). Кликните 2-ю точку.").arg(p0.x()).arg(p0.y()));
+        emit statusChanged(QString("Dot 1: (%1,%2). Click the 2nd.").arg(p0.x()).arg(p0.y()));
     } else {
         QPoint p1 = e->pos();
         if (algo == Bresenham)
@@ -40,7 +37,7 @@ void LineCanvas::mousePressEvent(QMouseEvent* e)
         else
             drawWu(p0.x(), p0.y(), p1.x(), p1.y());
         pending = false;
-        emit statusChanged(QString("Отрезок: (%1,%2) → (%3,%4)").arg(p0.x()).arg(p0.y()).arg(p1.x()).arg(p1.y()));
+        emit statusChanged(QString("Line: (%1,%2) → (%3,%4)").arg(p0.x()).arg(p0.y()).arg(p1.x()).arg(p1.y()));
         update();
     }
 }
@@ -58,7 +55,7 @@ void LineCanvas::paintEvent(QPaintEvent*)
     for (int x = 0; x < width();  x += 40) g.drawLine(x, 0, x, height());
     for (int y = 0; y < height(); y += 40) g.drawLine(0, y, width(), y);
     if (pending) {
-        g.setPen(QPen(QColor("#d1395c"), 1, Qt::DashLine));
+        g.setPen(QPen(Qt::black, 1, Qt::DashLine));
         g.drawEllipse(p0, 4, 4);
     }
 }
@@ -170,10 +167,8 @@ Task2Window::Task2Window()
         b->setFixedHeight(38);
         b->setStyleSheet(QString(
                              "QPushButton {"
-                             "  background:#f6f8fa;"
                              "  color:%1;"
                              "  border:1px solid %2;"
-                             "  border-radius:8px;"
                              "}"
                              "QPushButton:hover {"
                              "  background:%1;"
@@ -197,10 +192,8 @@ Task2Window::Task2Window()
         b->setAutoExclusive(true);
         b->setStyleSheet(QString(
                              "QPushButton {"
-                             "  background:#f6f8fa;"
                              "  color:%1;"
                              "  border:1px solid %2;"
-                             "  border-radius:8px;"
                              "}"
                              "QPushButton:hover {"
                              "  background:%1;"
@@ -220,9 +213,9 @@ Task2Window::Task2Window()
         return b;
     };
 
-    auto* bBr = mkToggle("Брезенхем", QColor(kAccent));
-    auto* bWu = mkToggle("Ву", QColor("#2f7fd1"));
-    auto* bClr = mkAction("Очистить",  QColor(kMuted));
+    auto* bBr = mkToggle("Брезенхем", Qt::darkGreen);
+    auto* bWu = mkToggle("Ву", Qt::blue);
+    auto* bClr = mkAction("Очистить",  Qt::red);
 
     bBr->setChecked(true);
 
@@ -232,26 +225,12 @@ Task2Window::Task2Window()
     pl->addWidget(bClr);
     pl->addStretch();
 
-    auto* status = new QLabel("Кликните 1-ю точку отрезка");
-    status->setStyleSheet(QString("color:%1; background:transparent;").arg(kTxt));
-    status->setGeometry(140, 625, 500, 18);
-
-    auto* coords = new QLabel("x=--- y=---");
-    coords->setStyleSheet(QString("color:%1; background:transparent;").arg(kMuted));
-    coords->setGeometry(740, 625, 160, 18);
-    coords->setAlignment(Qt::AlignRight);
-
     connect(bBr,  &QPushButton::clicked, this, [=]{
         canvas->setAlgo(LineCanvas::Bresenham);
-        status->setText("Алгоритм: Брезенхем");
     });
     connect(bWu,  &QPushButton::clicked, this, [=]{
         canvas->setAlgo(LineCanvas::Wu);
-        status->setText("Алгоритм: Ву");
     });
 
     connect(bClr, &QPushButton::clicked, this, [=]{ canvas->clearAll(); });
-
-    connect(canvas, &LineCanvas::statusChanged, status, &QLabel::setText);
-    connect(canvas, &LineCanvas::coordsChanged, coords, &QLabel::setText);
 }

@@ -10,12 +10,9 @@
 #include <algorithm>
 #include <cmath>
 
-static const char* kBg     = "#ffffff";
+static const char* kBg = "#ffffff";
 static const char* kBorder = "#d0d7de";
-static const char* kTxt    = "#1f2328";
-static const char* kMuted  = "#6e7781";
-static const char* kAccent = "#0f9d6f";
-static const char* kAccent2= "#d1395c";
+static const char* kMuted = "#6e7781";
 
 TriCanvas::TriCanvas(QWidget* parent) : QWidget(parent) {
     setFixedSize(720, 600);
@@ -25,9 +22,9 @@ TriCanvas::TriCanvas(QWidget* parent) : QWidget(parent) {
     img = QImage(size(), QImage::Format_ARGB32);
     img.fill(Qt::white);
 
-    colors[0]        = QColor(15, 157, 111);
-    colors[1]        = QColor(209, 57, 92);
-    colors[2]        = QColor(47, 127, 209);
+    colors[0] = QColor(15, 157, 111);
+    colors[1] = QColor(209, 57, 92);
+    colors[2] = QColor(47, 127, 209);
 
     displayColors[0] = colors[0];
     displayColors[1] = colors[1];
@@ -155,7 +152,7 @@ void TriCanvas::rasterizeTriangle() {
 }
 
 Task3Window::Task3Window() {
-    setWindowTitle("Task 3 — Gradient Triangle");
+    setWindowTitle("Task 3 - Gradient Triangle");
     setFixedSize(920, 660);
     setStyleSheet(QString("background:%1;").arg(kBg));
 
@@ -177,8 +174,6 @@ Task3Window::Task3Window() {
                    "  color:#ffffff;"
                    "  border:1px solid %2;"
                    "  border-radius:8px;"
-                   "  font-size:11px;"
-                   "  font-weight:600;"
                    "}"
                    "QPushButton:hover {"
                    "  background:%2;"
@@ -220,15 +215,6 @@ Task3Window::Task3Window() {
     pl->addWidget(bClr);
     pl->addStretch();
 
-    auto* status = new QLabel("Кликните 1-ю вершину треугольника");
-    status->setStyleSheet(QString("color:%1; background:transparent;").arg(kTxt));
-    status->setGeometry(180, 625, 500, 18);
-
-    auto* coords = new QLabel("x=--- y=---");
-    coords->setStyleSheet(QString("color:%1; background:transparent;").arg(kMuted));
-    coords->setGeometry(700, 625, 200, 18);
-    coords->setAlignment(Qt::AlignRight);
-
     auto pick = [=](int i, QPushButton* b) {
         canvas->setColor(i);
         b->setStyleSheet(styleFor(canvas->colorOf(i)));
@@ -238,7 +224,4 @@ Task3Window::Task3Window() {
     connect(b2,  &QPushButton::clicked, [=]{ pick(1, b2); });
     connect(b3,  &QPushButton::clicked, [=]{ pick(2, b3); });
     connect(bClr, &QPushButton::clicked, this, [=]{ canvas->clearAll(); });
-
-    connect(canvas, &TriCanvas::statusChanged, status, &QLabel::setText);
-    connect(canvas, &TriCanvas::coordsChanged, coords, &QLabel::setText);
 }
