@@ -15,7 +15,8 @@ static const char* kTxt    = "#1f2328";
 static const char* kMuted  = "#6e7781";
 static const char* kAccent = "#0f9d6f";
 
-LineCanvas::LineCanvas(QWidget* parent) : QWidget(parent) {
+LineCanvas::LineCanvas(QWidget* parent) : QWidget(parent)
+{
     setFixedSize(760, 600);
     setMouseTracking(true);
     setCursor(Qt::CrossCursor);
@@ -27,7 +28,8 @@ LineCanvas::LineCanvas(QWidget* parent) : QWidget(parent) {
 void LineCanvas::setAlgo(Algo a) { algo = a; }
 void LineCanvas::clearAll() { img.fill(Qt::white); pending = false; update(); }
 
-void LineCanvas::mousePressEvent(QMouseEvent* e) {
+void LineCanvas::mousePressEvent(QMouseEvent* e)
+{
     if (!pending) {
         p0 = e->pos(); pending = true;
         emit statusChanged(QString("Точка 1: (%1,%2). Кликните 2-ю точку.").arg(p0.x()).arg(p0.y()));
@@ -38,17 +40,18 @@ void LineCanvas::mousePressEvent(QMouseEvent* e) {
         else
             drawWu(p0.x(), p0.y(), p1.x(), p1.y());
         pending = false;
-        emit statusChanged(QString("Отрезок: (%1,%2) → (%3,%4)")
-                               .arg(p0.x()).arg(p0.y()).arg(p1.x()).arg(p1.y()));
+        emit statusChanged(QString("Отрезок: (%1,%2) → (%3,%4)").arg(p0.x()).arg(p0.y()).arg(p1.x()).arg(p1.y()));
         update();
     }
 }
 
-void LineCanvas::mouseMoveEvent(QMouseEvent* e) {
+void LineCanvas::mouseMoveEvent(QMouseEvent* e)
+{
     emit coordsChanged(QString("x=%1 y=%2").arg(e->pos().x()).arg(e->pos().y()));
 }
 
-void LineCanvas::paintEvent(QPaintEvent*) {
+void LineCanvas::paintEvent(QPaintEvent*)
+{
     QPainter g(this);
     g.drawImage(0, 0, img);
     g.setPen(QPen(QColor(0,0,0,10), 1));
@@ -60,7 +63,8 @@ void LineCanvas::paintEvent(QPaintEvent*) {
     }
 }
 
-void LineCanvas::drawBresenham(int x0, int y0, int x1, int y1) {
+void LineCanvas::drawBresenham(int x0, int y0, int x1, int y1)
+{
     const int W = img.width();
     const int H = img.height();
     const QColor c = Qt::black;
@@ -71,7 +75,8 @@ void LineCanvas::drawBresenham(int x0, int y0, int x1, int y1) {
     int sy = (y0 < y1) ? 1 : -1;
     int err = dx + dy;
 
-    while (true) {
+    while (true)
+    {
         if (x0 >= 0 && y0 >= 0 && x0 < W && y0 < H)
             img.setPixelColor(x0, y0, c);
 
@@ -83,7 +88,8 @@ void LineCanvas::drawBresenham(int x0, int y0, int x1, int y1) {
     }
 }
 
-void LineCanvas::drawWu(int x0, int y0, int x1, int y1) {
+void LineCanvas::drawWu(int x0, int y0, int x1, int y1)
+{
     const int W = img.width();
     const int H = img.height();
     const QColor c = Qt::black;
@@ -93,14 +99,14 @@ void LineCanvas::drawWu(int x0, int y0, int x1, int y1) {
         if (k <= 0.0) return;
         if (k > 1.0) k = 1.0;
         QColor old = img.pixelColor(x, y);
-        double r = c.red()   * k + old.red()   * (1.0 - k);
+        double r = c.red() * k + old.red() * (1.0 - k);
         double g = c.green() * k + old.green() * (1.0 - k);
-        double b = c.blue()  * k + old.blue()  * (1.0 - k);
+        double b = c.blue() * k + old.blue() * (1.0 - k);
         img.setPixelColor(x, y, QColor(int(r), int(g), int(b)));
     };
 
     const int xStart = x0, yStart = y0;
-    const int xEnd   = x1, yEnd   = y1;
+    const int xEnd = x1, yEnd = y1;
 
     bool steep = qAbs(y1 - y0) > qAbs(x1 - x0);
     if (steep) { std::swap(x0, y0); std::swap(x1, y1); }
@@ -111,36 +117,40 @@ void LineCanvas::drawWu(int x0, int y0, int x1, int y1) {
 
     if (dx == 0) {
         plot(xStart, yStart, 1.0);
-        plot(xEnd,   yEnd,   1.0);
+        plot(xEnd, yEnd, 1.0);
         return;
     }
 
     double gradient = double(dy) / double(dx);
 
-    if (steep) plot(y0, x0, 1.0);
-    else       plot(x0, y0, 1.0);
+    if (steep)
+        plot(y0, x0, 1.0);
+    else
+        plot(x0, y0, 1.0);
 
     double y = y0 + gradient;
-    for (int x = x0 + 1; x < x1; ++x) {
-        int    yi   = int(std::floor(y));
+    for (int x = x0 + 1; x < x1; ++x)
+    {
+        int yi = int(std::floor(y));
         double frac = y - yi;
 
         if (steep) {
-            plot(yi,     x, 1.0 - frac);
+            plot(yi, x, 1.0 - frac);
             plot(yi + 1, x, frac);
         } else {
-            plot(x, yi,     1.0 - frac);
+            plot(x, yi, 1.0 - frac);
             plot(x, yi + 1, frac);
         }
         y += gradient;
     }
 
     if (steep) plot(y1, x1, 1.0);
-    else       plot(x1, y1, 1.0);
+    else plot(x1, y1, 1.0);
 }
 
-Task2Window::Task2Window() {
-    setWindowTitle("Task 2 — Bresenham & Wu");
+Task2Window::Task2Window()
+{
+    setWindowTitle("Task 2 - Bresenham & Wu");
     setFixedSize(920, 660);
     setStyleSheet(QString("background:%1;").arg(kBg));
 
@@ -210,8 +220,8 @@ Task2Window::Task2Window() {
         return b;
     };
 
-    auto* bBr  = mkToggle("Брезенхем", QColor(kAccent));
-    auto* bWu  = mkToggle("Ву",        QColor("#2f7fd1"));
+    auto* bBr = mkToggle("Брезенхем", QColor(kAccent));
+    auto* bWu = mkToggle("Ву", QColor("#2f7fd1"));
     auto* bClr = mkAction("Очистить",  QColor(kMuted));
 
     bBr->setChecked(true);
