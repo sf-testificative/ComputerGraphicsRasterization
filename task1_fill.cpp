@@ -70,6 +70,11 @@ void Canvas::mousePressEvent(QMouseEvent* e) {
         update();
     }
     else if (mode == FillColor) {
+        // для сплошной заливки origin не используется, но поля всё равно
+        // выставляем — на случай, если понадобится в будущем
+        fillOriginX = p.x();
+        fillOriginY = p.y();
+
         floodFillScanline(p.x(), p.y(), fillColor, false);
         update();
     }
@@ -78,6 +83,10 @@ void Canvas::mousePressEvent(QMouseEvent* e) {
             emit statusChanged("Сначала загрузите узор");
             return;
         }
+
+        // запоминаем точку клика — к ней привяжется левый верхний угол узора
+        fillOriginX = p.x();
+        fillOriginY = p.y();
 
         floodFillScanline(p.x(), p.y(), QColor(), true);
         update();
@@ -152,14 +161,17 @@ void Canvas::paintEvent(QPaintEvent*) {
     g.setPen(QPen(QColor(0,0,0,10), 1));
 }
 
-void Canvas::floodFillScanline(int x,int y,const QColor& c,bool usePattern) {
-    if (x < 0 || y < 0 ||x >= img.width() || y >= img.height())
+void Canvas::floodFillScanline(int x, int y, const QColor& c, bool usePattern) {
+    if (x < 0 || y < 0 || x >= img.width() || y >= img.height())
         return;
 
     const QRgb target = img.pixel(x, y);
     if (!usePattern && QColor(target) == c)
         return;
 
+    // pixelAt сэмплирует узор так, что левый верхний угол узора
+    // оказывается в точке клика (fillOriginX, fillOriginY).
+    // При usePattern == false просто возвращает сплошной цвет c.
     auto pixelAt = [&](int px, int py) -> QColor {
         if (!usePattern)
             return c;
@@ -170,23 +182,32 @@ void Canvas::floodFillScanline(int x,int y,const QColor& c,bool usePattern) {
         if (pw <= 0 || ph <= 0)
             return QColor();
 
-        const int patternX = px % pw;
-        const int patternY = py % ph;
+        int u = (px - fillOriginX) % pw;
+        int v = (py - fillOriginY) % ph;
 
-        return pattern.pixelColor(patternX, patternY);
+        // C++ остаток от деления может быть отрицательным — приводим к [0, pw/ph)
+        if (u < 0) u += pw;
+        if (v < 0) v += ph;
+
+        return pattern.pixelColor(u, v);
     };
+
+    // ищем границы серии на текущей строке
     int xl = x;
     while (xl > 0 && img.pixel(xl - 1, y) == target)
         --xl;
-    int xr = x;
 
+    int xr = x;
     while (xr < img.width() - 1 &&
            img.pixel(xr + 1, y) == target) {
         ++xr;
     }
+
+    // закрашиваем серию
     for (int px = xl; px <= xr; ++px)
         img.setPixelColor(px, y, pixelAt(px, y));
 
+    // рекурсивно обрабатываем соседние строки
     for (int ny : { y - 1, y + 1 }) {
         if (ny < 0 || ny >= img.height())
             continue;
