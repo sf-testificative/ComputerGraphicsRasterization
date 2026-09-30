@@ -35,6 +35,8 @@ private:
     bool isFg(int , int) const;
     QVector<QPoint> mooreTrace(const QPoint&) const;
 
+    int fillOriginX = 0;
+    int fillOriginY = 0;
     QImage img;
     QImage pattern;
     Mode   mode = Draw;
