@@ -62,26 +62,17 @@ void LineCanvas::paintEvent(QPaintEvent*)
 
 void LineCanvas::drawBresenham(int x0, int y0, int x1, int y1)
 {
-    const int W = img.width();
-    const int H = img.height();
-    const QColor c = Qt::black;
+    if (qAbs(y1 - y0) < qAbs(x1 - x0)) {
+        if (x0 > x1)
+            plotLineLow(x1, y1, x0, y0);
+        else
+            plotLineLow(x0, y0, x1, y1);
+    } else {
 
-    int dx =  qAbs(x1 - x0);
-    int sx = (x0 < x1) ? 1 : -1;
-    int dy = -qAbs(y1 - y0);
-    int sy = (y0 < y1) ? 1 : -1;
-    int err = dx + dy;
-
-    while (true)
-    {
-        if (x0 >= 0 && y0 >= 0 && x0 < W && y0 < H)
-            img.setPixelColor(x0, y0, c);
-
-        if (x0 == x1 && y0 == y1) break;
-
-        int e2 = 2 * err;
-        if (e2 >= dy) { err += dy; x0 += sx; }
-        if (e2 <= dx) { err += dx; y0 += sy; }
+        if (y0 > y1)
+            plotLineHigh(x1, y1, x0, y0);
+        else
+            plotLineHigh(x0, y0, x1, y1);
     }
 }
 
@@ -143,6 +134,70 @@ void LineCanvas::drawWu(int x0, int y0, int x1, int y1)
 
     if (steep) plot(y1, x1, 1.0);
     else plot(x1, y1, 1.0);
+}
+
+void LineCanvas::plotLineLow(int x0, int y0, int x1, int y1)
+{
+    const int W = img.width();
+    const int H = img.height();
+    const QColor c = Qt::black;
+
+    int dx = x1 - x0;
+    int dy = y1 - y0;
+    int yi = 1;
+
+    if (dy < 0){
+        yi = -1;
+        dy = -dy;
+    }
+
+    int D = 2 * dy - dx;
+    int y = y0;
+
+    for (int x = x0; x <= x1; ++x)
+    {
+        if (x >= 0 && y >= 0 && x < W && y < H)
+            img.setPixelColor(x, y, c);
+
+        if (D > 0) {
+            y += yi;
+            D += 2 * (dy - dx);
+        } else {
+            D += 2 * dy;
+        }
+    }
+}
+
+void LineCanvas::plotLineHigh(int x0, int y0, int x1, int y1)
+{
+    const int W = img.width();
+    const int H = img.height();
+    const QColor c = Qt::black;
+
+    int dx = x1 - x0;
+    int dy = y1 - y0;
+    int xi = 1;
+
+    if (dx < 0) {
+        xi = -1;
+        dx = -dx;
+    }
+
+    int D = 2 * dx - dy;
+    int x = x0;
+
+    for (int y = y0; y <= y1; ++y)
+    {
+        if (x >= 0 && y >= 0 && x < W && y < H)
+            img.setPixelColor(x, y, c);
+
+        if (D > 0) {
+            x += xi;
+            D += 2 * (dx - dy);
+        } else {
+            D += 2 * dx;
+        }
+    }
 }
 
 Task2Window::Task2Window()

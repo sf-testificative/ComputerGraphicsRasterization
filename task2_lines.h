@@ -28,6 +28,9 @@ private:
     void drawBresenham(int x0, int y0, int x1, int y1);
     void drawWu(int x0, int y0, int x1, int y1);
 
+    void plotLineLow (int x0, int y0, int x1, int y1);
+    void plotLineHigh(int x0, int y0, int x1, int y1);
+
     QImage img;
     Algo   algo = Bresenham;
     QPoint p0;
