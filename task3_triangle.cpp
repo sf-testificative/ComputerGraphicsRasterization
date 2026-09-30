@@ -10,12 +10,9 @@
 #include <algorithm>
 #include <cmath>
 
-static const char* kBg     = "#ffffff";
+static const char* kBg = "#ffffff";
 static const char* kBorder = "#d0d7de";
-static const char* kTxt    = "#1f2328";
-static const char* kMuted  = "#6e7781";
-static const char* kAccent = "#0f9d6f";
-static const char* kAccent2= "#d1395c";
+static const char* kMuted = "#6e7781";
 
 TriCanvas::TriCanvas(QWidget* parent) : QWidget(parent) {
     setFixedSize(720, 600);
@@ -25,9 +22,9 @@ TriCanvas::TriCanvas(QWidget* parent) : QWidget(parent) {
     img = QImage(size(), QImage::Format_ARGB32);
     img.fill(Qt::white);
 
-    colors[0]        = QColor(15, 157, 111);
-    colors[1]        = QColor(209, 57, 92);
-    colors[2]        = QColor(47, 127, 209);
+    colors[0] = QColor(15, 157, 111);
+    colors[1] = QColor(209, 57, 92);
+    colors[2] = QColor(47, 127, 209);
 
     displayColors[0] = colors[0];
     displayColors[1] = colors[1];
@@ -97,20 +94,29 @@ void TriCanvas::paintEvent(QPaintEvent*) {
 }
 
 void TriCanvas::rasterizeTriangle() {
-    if (pts.size() != 3) return;
+    if (pts.size() != 3)
+        return;
 
-    const double Ax = pts[0].x(), Ay = pts[0].y();
-    const double Bx = pts[1].x(), By = pts[1].y();
-    const double Cx = pts[2].x(), Cy = pts[2].y();
+    const double Ax = pts[0].x();
+    const double Ay = pts[0].y();
+    const double Bx = pts[1].x();
+    const double By = pts[1].y();
+    const double Cx = pts[2].x();
+    const double Cy = pts[2].y();
 
-    const double det = (Bx - Cx) * (Ay - Cy) - (Ax - Cx) * (By - Cy);
+    const double a11 = Ax - Cx;
+    const double a12 = Bx - Cx;
+    const double a21 = Ay - Cy;
+    const double a22 = By - Cy;
+    const double det = a11 * a22 - a12 * a21;
+
     if (std::abs(det) < 1e-9)
         return;
 
     const int xMin = std::max(int(std::floor(std::min({Ax, Bx, Cx}))), 0);
-    const int xMax = std::min(int(std::ceil (std::max({Ax, Bx, Cx}))), img.width()  - 1);
+    const int xMax = std::min(int(std::ceil(std::max({Ax, Bx, Cx}))), img.width() - 1);
     const int yMin = std::max(int(std::floor(std::min({Ay, By, Cy}))), 0);
-    const int yMax = std::min(int(std::ceil (std::max({Ay, By, Cy}))), img.height() - 1);
+    const int yMax = std::min(int(std::ceil(std::max({Ay, By, Cy}))), img.height() - 1);
 
     const QColor& cA = displayColors[0];
     const QColor& cB = displayColors[1];
@@ -118,44 +124,42 @@ void TriCanvas::rasterizeTriangle() {
 
     for (int y = yMin; y <= yMax; ++y) {
         for (int x = xMin; x <= xMax; ++x) {
-
             const double px = x + 0.5;
             const double py = y + 0.5;
 
             const double dx = px - Cx;
             const double dy = py - Cy;
 
-            const double a11 = Ax - Cx;
-            const double a12 = Bx - Cx;
-            const double a21 = Ay - Cy;
-            const double a22 = By - Cy;
-            const double b1  = dx;
-            const double b2  = dy;
-
-            const double D = a11 * a22 - a12 * a21;
-            if (std::abs(D) < 1e-9)
-                continue;
-
-            const double wa = (b1 * a22 - a12 * b2) / D;
-            const double wb = (a11 * b2 - b1 * a21) / D;
+            const double wa = (dx * a22 - a12 * dy) / det;
+            const double wb = (a11 * dy - dx * a21) / det;
             const double wc = 1.0 - wa - wb;
 
             if (wa < -1e-6 || wb < -1e-6 || wc < -1e-6)
                 continue;
 
-            const int r = int(wa * cA.red()   + wb * cB.red()   + wc * cC.red());
-            const int g = int(wa * cA.green() + wb * cB.green() + wc * cC.green());
-            const int b = int(wa * cA.blue()  + wb * cB.blue()  + wc * cC.blue());
+            const int r = qBound(0,
+                                 int(std::lround(wa * cA.red() +
+                                                 wb * cB.red() +
+                                                 wc * cC.red())),
+                                 255);
+            const int g = qBound(0,
+                                 int(std::lround(wa * cA.green() +
+                                                 wb * cB.green() +
+                                                 wc * cC.green())),
+                                 255);
+            const int b = qBound(0,
+                                 int(std::lround(wa * cA.blue() +
+                                                 wb * cB.blue() +
+                                                 wc * cC.blue())),
+                                 255);
 
-            img.setPixelColor(x, y, QColor(qBound(0, r, 255),
-                                           qBound(0, g, 255),
-                                           qBound(0, b, 255)));
+            img.setPixelColor(x, y, QColor(r, g, b));
         }
     }
 }
 
 Task3Window::Task3Window() {
-    setWindowTitle("Task 3 — Gradient Triangle");
+    setWindowTitle("Task 3 - Gradient Triangle");
     setFixedSize(920, 660);
     setStyleSheet(QString("background:%1;").arg(kBg));
 
@@ -177,8 +181,6 @@ Task3Window::Task3Window() {
                    "  color:#ffffff;"
                    "  border:1px solid %2;"
                    "  border-radius:8px;"
-                   "  font-size:11px;"
-                   "  font-weight:600;"
                    "}"
                    "QPushButton:hover {"
                    "  background:%2;"
@@ -220,15 +222,6 @@ Task3Window::Task3Window() {
     pl->addWidget(bClr);
     pl->addStretch();
 
-    auto* status = new QLabel("Кликните 1-ю вершину треугольника");
-    status->setStyleSheet(QString("color:%1; background:transparent;").arg(kTxt));
-    status->setGeometry(180, 625, 500, 18);
-
-    auto* coords = new QLabel("x=--- y=---");
-    coords->setStyleSheet(QString("color:%1; background:transparent;").arg(kMuted));
-    coords->setGeometry(700, 625, 200, 18);
-    coords->setAlignment(Qt::AlignRight);
-
     auto pick = [=](int i, QPushButton* b) {
         canvas->setColor(i);
         b->setStyleSheet(styleFor(canvas->colorOf(i)));
@@ -238,7 +231,5 @@ Task3Window::Task3Window() {
     connect(b2,  &QPushButton::clicked, [=]{ pick(1, b2); });
     connect(b3,  &QPushButton::clicked, [=]{ pick(2, b3); });
     connect(bClr, &QPushButton::clicked, this, [=]{ canvas->clearAll(); });
-
-    connect(canvas, &TriCanvas::statusChanged, status, &QLabel::setText);
-    connect(canvas, &TriCanvas::coordsChanged, coords, &QLabel::setText);
 }
+
