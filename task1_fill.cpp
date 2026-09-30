@@ -248,7 +248,7 @@ QVector<QPoint> Canvas::mooreTrace(const QPoint& start) const {
     QPoint cur = start;
     contour.append(cur);
 
-    int prevDir = 4;
+    int prevDir = 1;
 
     const int maxSteps = img.width() * img.height();
     int steps = 0;
