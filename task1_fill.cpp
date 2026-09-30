@@ -208,18 +208,23 @@ void Canvas::floodFillScanline(int x,int y,const QColor& c,bool usePattern) {
 }
 
 QPoint Canvas::findStart(const QPoint& p) const {
-    for (int r = 0; r < 40; ++r) {
-        for (int dy = -r; dy <= r; ++dy)
-            for (int dx = -r; dx <= r; ++dx) {
-                int nx = p.x()+dx, ny = p.y()+dy;
+    const int W = img.width();
+    const int H = img.height();
 
-                if (nx < 0 || ny < 0 ||
-                    nx >= img.width() || ny >= img.height())
-                    continue;
+    if (isFg(p.x(), p.y()))
+        return p;
 
-                if (img.pixelColor(nx, ny) != Qt::white)
-                    return {nx, ny};
-            }
+    for (int r = 1; r < 350; ++r) {
+        for (int dx = -r; dx <= r; ++dx) {
+            int nx = p.x() + dx;
+            if (isFg(nx, p.y() - r)) return {nx, p.y() - r};
+            if (isFg(nx, p.y() + r)) return {nx, p.y() + r};
+        }
+        for (int dy = -r + 1; dy <= r - 1; ++dy) {
+            int ny = p.y() + dy;
+            if (isFg(p.x() - r, ny)) return {p.x() - r, ny};
+            if (isFg(p.x() + r, ny)) return {p.x() + r, ny};
+        }
     }
 
     return QPoint();
